@@ -5,7 +5,7 @@ import db from '../util/database';
 
 class Employee{
 
-    router;
+    router: Router;
 
     constructor(){
         /**
@@ -44,4 +44,4 @@ const employee = new Employee();
 /**
  * Be aware that we are exporting the router 
  */
-export default employee. router;
+export default employee.router;
