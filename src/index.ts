@@ -6,6 +6,7 @@ import morgan from 'morgan';
  * 
  */
 import employee from './routes/employee';
+import areas from './routes/areas';
 import config from './config/configEnv';
 
 class Server{
@@ -35,6 +36,8 @@ class Server{
 //        this.app.use('auth', auth);
         // Route of employees
         this.app.use('/employees', employee);
+        // Route of areas
+        this.app.use('/areas',areas);
     }
 
     start(){
