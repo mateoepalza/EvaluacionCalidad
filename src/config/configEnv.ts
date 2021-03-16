@@ -5,6 +5,7 @@ class GlobalEnv{
 
     port: string;
     database: string;
+    db: string;
 
     constructor(){
         dotenv.config();
@@ -17,9 +18,13 @@ class GlobalEnv{
          */
         this.port = process.env.PORT;
         /**
-         * Database
+         * URL
          */
         this.database= process.env.URI;
+        /**
+         * Collection
+         */
+        this.db = process.env.DB;
     }
 
 }

@@ -1,4 +1,5 @@
 import express, { Application } from 'express';
+import { MongoClient } from 'mongodb';
 import cors from 'cors';
 import morgan from 'morgan';
 
@@ -7,19 +8,23 @@ import morgan from 'morgan';
  */
 import employee from './routes/employee';
 import areas from './routes/areas';
+import statistics from './routes/statistics';
 import config from './config/configEnv';
 
-class Server{
-    
+import EmployeeDAO from './DAO/employee.DAO';
+
+class Server {
+
     app: Application;
 
-    constructor(){
+    constructor() {
         this.app = express();
         this.config();
         this.routes();
+        this.dbConfig();
     }
-    
-    config():void{
+
+    config(): void {
         /**
          * Initialize the express on the port 
          */
@@ -32,18 +37,32 @@ class Server{
         this.app.use(express.json());
     }
 
-    routes():void{
-//        this.app.use('auth', auth);
+    routes(): void {
+        //        this.app.use('auth', auth);
         // Route of employees
         this.app.use('/employees', employee);
         // Route of areas
-        this.app.use('/areas',areas);
+        this.app.use('/areas', areas);
+        // Route of statistics
+        this.app.use('/statistics', statistics);
     }
 
-    start(){
-        this.app.listen(this.app.get('port'), () =>{
+    start() {
+        this.app.listen(this.app.get('port'), () => {
             console.log(`Server on port ${this.app.get('port')}`);
         });
+    }
+
+    async dbConfig() {
+        try {
+            const db = await MongoClient.connect(config.database);
+
+            await EmployeeDAO.injectDB(db);
+
+        } catch (e) {
+            console.error(e.stack);
+            process.exit(1);
+        }
     }
 }
 

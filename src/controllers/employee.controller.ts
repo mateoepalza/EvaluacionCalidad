@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import db from '../util/database';
 import { Employee } from '../models/employee';
+import EmployeeDAO from '../DAO/employee.DAO';
+import employee from '../routes/employee';
 
 class EmployeeController {
 
@@ -10,53 +11,21 @@ class EmployeeController {
     async getEmployees(req: Request, res: Response) {
 
         try {
-            /**
-             * Hacemos la búsqueda, tener en cuenta que obtenemos un Objeto cursor
-             */
-            const cursor = await db.db("evaluacion_calidad").collection("employee")
-                .aggregate([
-                    /**
-                     * This is a inner join
-                     */
-                    {
-                        $lookup: {
-                            from: "areas",
-                            localField: "id_area",
-                            foreignField: "_id",
-                            as: "area"
-                        },
-                    }, {
-                        /**
-                         * This tells mongodb to delete the [] element
-                         */
-                        $unwind: {
-                            "path": "$area",
-                            "preserveNullAndEmptyArrays": false
-                        }
-                    }
-                ]);
+            const resEmployees = await EmployeeDAO.getEmployees();
 
-            /**
-             *  Convertimos esos elementos a un Array 
-             */
+            let { error } = resEmployees;
 
-            const resQuery = await cursor.toArray();
-            
-            if (resQuery.length > 0) {
-                /**
-                 * Devolvemos el resultado en caso de que la cantidad de elementos sea mayor a 0
-                 */
-                res.status(200).json({ data: resQuery });
-            } else {
-                /**
-                 *  Devolvemos alerta de que los elementos no existen 
-                 */
-                res.status(400).json({ message: "No existen empleados registrados" });
+            if (error) {
+                res.status(400).json(error)
             }
-        } catch (err) {
-            console.log(err);
-            res.status(400).json({ message: "Ocurrió algo inesperado" });
+
+            res.json({ data: resEmployees });
+
+        } catch (e) {
+            console.error(e);
+            res.status(500).json(e);
         }
+
     }
 
     async getEmployee(req: Request, res: Response) {
@@ -67,73 +36,25 @@ class EmployeeController {
              */
             const { id } = req.params;
 
-            /**
-             * Realizamos la consulta, devuelve un elemento cursor
-             */
-            const resQuery = await db.db("evaluacion_calidad").collection("employee").aggregate([
-                {
-                    $match: {
-                        _id: id
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "areas",
-                        localField: "id_area",
-                        foreignField: "_id",
-                        as: "area"
-                    }
-                },
-                {
-                    $unwind: {
-                        "path": "$area",
-                        "preserveNullAndEmptyArrays": false
-                    }
-                },
-                {
-                    $project: {
-                        id_area: 0
-                    }
-                }
-            ]);
+            const resEmployee = await EmployeeDAO.getEmployee(id);
 
-            /**
-             * Convertimos el cursor a un array
-             */
-            const arrResultQuery = await resQuery.toArray();
+            let { error } = resEmployee;
 
-            /***
-             * Revisamos si hubo algun resultado
-             */
-            if (arrResultQuery) {
-                /**
-                 * Devolvemos el resultado
-                 */
-                res.status(200).json({
-                    data: arrResultQuery
-                });
-            } else {
-                /**
-                 * Devolvemos un mensaje de alerta
-                 */
-                res.status(400).json({
-                    message: "No se encontró ningun resultado"
-                })
+            if (error) {
+                res.status(400).json(error);
             }
 
-        } catch (error) {
-            /**
-             * En caso de error devolvemos mensaje de alerta
-             */
-            console.error(error);
-            res.status(400).json({
-                message: "Ocurrió algo inesperado"
-            });
+            res.json({ data: resEmployee });
+
+        } catch (e) {
+            console.error(e);
+            res.status(400).json(e);
         }
 
     }
 
     async newEmployee(req: Request, res: Response) {
+
         try {
             /**
              * Obtengo la informacion pasada por POST
@@ -153,36 +74,30 @@ class EmployeeController {
                 imagePath: imagePath
             };
 
-            /**
-             * Realizo el query
-             */
-            const resQuery = await db.db("evaluacion_calidad").collection("employee").insertOne(employee);
+            const resEmployee = await EmployeeDAO.newEmployee(employee);
 
-            /**
-             * Respondemos 
-             */
-            res.status(200).json({
-                message: "Empleado almacenado correctamente"
+            let { error } = resEmployee;
+
+            if (error) {
+                res.status(400).json(error)
+            }
+
+            res.json({
+                message: "El empleado ha sido creado satisfactoriamente"
             });
 
         } catch (e) {
             console.error(e);
-            /**
-             * Respondemos error
-             */
-            res.status(400).json({
-                message: "Ocurrió algo inesperado"
-            })
+            res.status(400).json(e);
         }
     }
 
     async updateEmployee(req: Request, res: Response) {
-        try {
-            /**
-             * Receive id from the URL
-             */
-            const { id } = req.params;
 
+        try {
+
+            const { id } = req.params;
+            
             /**
              * Receive body data
              */
@@ -199,27 +114,29 @@ class EmployeeController {
                 imagePath: imagePath
             }
 
-            /**
-             * Update the data
-             */
-            const resQuery = await db.db("evaluacion_calidad").collection("employee").updateOne({ _id: id }, { $set: employee });
+            const resEmployee = await EmployeeDAO.updateEmployee(id, employee);
 
-            if (resQuery.modifiedCount > 0) {
-                res.status(200).json({
-                    message: "Los datos fueron actualizados correctamente"
-                })
-            } else {
-                res.status(200).json({
-                    message: "Ocurrió algo inesperado"
-                });
+            /**
+             * Receive id from the URL
+             */
+            if (resEmployee.modifiedCount === 0) {
+                new Error(
+                    "La información del empleado no ha sido actualizada"
+                )
             }
 
-        } catch (error) {
-            console.error(error);
-            res.status(400).json({
-                message: "Ocurrió algo inesperado"
+            res.json({
+                message: "El empleado ha sido actualizado correctamente"
             });
+
+        } catch (e) {
+            res.status(500).json(e)
         }
+
+
+
+
+
     }
 
     async deleteEmployee(req: Request, res: Response) {
@@ -229,23 +146,20 @@ class EmployeeController {
              */
             const { id } = req.params;
 
-            /**
-             * Delete element
-             */
-            const resQuery = await db.db("evaluacion_calidad").collection("employee").deleteOne({ _id: id });
+            const resEmployee = await EmployeeDAO.deleteEmployee(id); 
 
-            if (resQuery.deletedCount > 0) {
-                res.status(200).json({
-                    message: "El elemento ha sido eliminado correctamente"
-                })
-            } else {
-                res.status(400).json({
-                    message: "No fue posible eliminar el usuario"
-                })
+            let { error } = resEmployee;
+            if(error){
+                res.status(400).json(error);
             }
 
-        } catch (error) {
-            console.log(error);
+            res.json({
+                message: "El empleado ha sido eliminado correctamente"
+            })
+
+        } catch (e) {
+            console.log(e);
+            res.status(400).json(e);
         }
     }
 }
