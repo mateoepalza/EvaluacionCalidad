@@ -1,5 +1,6 @@
 export interface Statistics {
    employee_id: string,
+   date: Date,
    conocimiento: {
       practico: number;
       teorico: number

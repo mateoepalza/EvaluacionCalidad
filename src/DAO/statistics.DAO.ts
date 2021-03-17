@@ -1,6 +1,6 @@
 import config from '../config/configEnv';
 import { Statistics } from '../models/statistics';
-import { objectId } from 'bson';
+import { ObjectId } from 'mongodb';
 
 let statistics;
 
@@ -21,17 +21,29 @@ export default class StatisticsDAO {
     
     static async getStatistics(){
         try {
-            
+
+           const cursor = await statistics.find();
+           return cursor.toArray();
+
         } catch (e) {
-            
+           console.error(e);
+           return { error : e }; 
         }
     }
 
-    static async getStatistic(){
+    static async getLastStatisticByUser(id_user: string){
         try {
-            
+           const cursor = await statistics.find(
+               { employee_id: id_user }
+           ).sort(
+               { date : -1}
+           ).limit(1)
+           
+           return cursor.toArray();
+
         } catch (e) {
-            
+            console.error(e);
+            return { error : e };
         }
     }
     
@@ -40,7 +52,7 @@ export default class StatisticsDAO {
             /**
              * insert the stat
              */
-            const resultOpe = statistics.insertOne(stat);
+            const resultOpe = await statistics.insertOne(stat);
             /**
              * return the result
              */
@@ -52,15 +64,15 @@ export default class StatisticsDAO {
         }
     }
     
-    static async updateStatistic(id: string, stats: Statistics){
+    static async updateStatistic(statistic_id: string, id_user: string, stats: Statistics){
         try{
             /**
              * Update elements 
              */
             const resultOpe = await statistics.updateOne(
                 { 
-                    _id: objectId(id),
-                    employee_id: stats.employee_id
+                    _id: ObjectId(statistic_id),
+                    employee_id: id_user
                 },
                 {
                    $set: stats
@@ -78,11 +90,12 @@ export default class StatisticsDAO {
         }
     }
     
-    static async deleteStatistic(id: string){
+    static async deleteStatistic(statistic_id: string, id_user: string){
         
         try {
             const resultOpe = await statistics.deleteOne({
-                _id: objectId(id)
+                _id: ObjectId(statistic_id),
+                employee_id: id_user
             })         
             
             return resultOpe;

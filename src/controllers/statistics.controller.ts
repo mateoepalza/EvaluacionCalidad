@@ -1,16 +1,44 @@
 import { Response, Request } from "express";
 import StatisticsDAO from "../DAO/statistics.DAO";
 import { Statistics } from "../models/statistics";
+import statistics from "../routes/statistics";
 
 class StatisticsController {
     constructor() { }
 
     async getStatistics(req: Request, res: Response) {
+        try {
+            const result = await StatisticsDAO.getStatistics(); 
+            
+            const { error } = result;
+            if(error){
+                res.status(400).json(error);
+            }
+            
+            res.json(result);
 
+        } catch (e) {
+            console.error(e);
+            res.status(400).status(e);
+        }
     }
 
     async getStatistic(req: Request, res: Response) {
+        try{
+            const { id } = req.params;
+            const result = await StatisticsDAO.getLastStatisticByUser(id);
+            
+            const { error } = result;
+            if(error){
+                res.status(400).json(error);
+            }
+            
+            res.json(result);
 
+        }catch(e){
+            console.error(e);
+            res.status(400).json(e);
+        }
     }
 
     async createStatistic(req: Request, res: Response) {
@@ -48,6 +76,7 @@ class StatisticsController {
              */
             const stats: Statistics = {
                 employee_id: id,
+                date: new Date(),
                 conocimiento: {
                     practico: practico,
                     teorico: teorico
@@ -73,7 +102,7 @@ class StatisticsController {
                     tolerancia: tolerancia,
                 }
             }
-
+            console.log(stats);
             const response = await StatisticsDAO.createStatistic(stats);
 
             const { error } = response;
@@ -93,12 +122,23 @@ class StatisticsController {
 
     async deleteStatistic(req: Request, res: Response) {
         try {
+            /**
+             * This takes URL parameter /1026299996/
+             */
             const { id } = req.params;
-            const response = await StatisticsDAO.deleteStatistic(id);
+            /**
+             * this takes a query parameter ?tag=5
+             */
+            const { statistic_id } = req.query;
 
+            const response = await StatisticsDAO.deleteStatistic(statistic_id, id);
+            
             const { error } = response;
             if (error) {
                 res.status(400).json(error);
+            }
+            if(response.result.n == 0){
+                throw Error("No ha sido posible eliminar la estadistica");
             }
             
             res.json({
@@ -106,7 +146,7 @@ class StatisticsController {
             })
         } catch (e) {
             console.error(e);
-            res.status(400).json(e);
+            res.status(500).json(e);
         }
     }
 
@@ -117,10 +157,13 @@ class StatisticsController {
              */
             const { id } = req.params;
             /**
+             * Get the query params
+             */
+            const { statistic_id } = req.query;
+            /**
              * Get the body of the request
              */
             const {
-                idStatistic,
                 practico,
                 teorico,
                 calidad,
@@ -146,6 +189,7 @@ class StatisticsController {
              */
             const stats: Statistics = {
                 employee_id: id,
+                date: new Date(),
                 conocimiento: {
                     practico: practico,
                     teorico: teorico
@@ -171,8 +215,8 @@ class StatisticsController {
                     tolerancia: tolerancia,
                 }
             }
-
-            const response = await StatisticsDAO.updateStatistic(idStatistic, stats);
+            console.log(stats);
+            const response = await StatisticsDAO.updateStatistic(statistic_id, id, stats);
 
             const { error } = response;
 

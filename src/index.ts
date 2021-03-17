@@ -12,6 +12,7 @@ import statistics from './routes/statistics';
 import config from './config/configEnv';
 
 import EmployeeDAO from './DAO/employee.DAO';
+import StatisticsDAO from './DAO/statistics.DAO';
 
 class Server {
 
@@ -35,6 +36,10 @@ class Server {
         this.app.use(morgan("dev"));
         this.app.use(cors());
         this.app.use(express.json());
+        /**
+         * static files
+         */
+        this.app.use(express.static('static'));
     }
 
     routes(): void {
@@ -48,7 +53,7 @@ class Server {
     }
 
     start() {
-        this.app.listen(this.app.get('port'), () => {
+        this.app.listen(this.app.get('port') || 8000, () => {
             console.log(`Server on port ${this.app.get('port')}`);
         });
     }
@@ -58,6 +63,7 @@ class Server {
             const db = await MongoClient.connect(config.database);
 
             await EmployeeDAO.injectDB(db);
+            await StatisticsDAO.injectDB(db);
 
         } catch (e) {
             console.error(e.stack);
