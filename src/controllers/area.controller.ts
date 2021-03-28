@@ -1,76 +1,51 @@
 import { Request, response, Response } from "express";
-import  db  from '../util/database';
+import AreaDAO from "../DAO/area.DAO";
 
 
-class AreaController{
+export default class AreaController{
 
-    constructor(){
-        
-    }
-    
-    async getAreas(req: Request, res: Response){
+    constructor(){}
+
+    static async getAreas(req: Request, res: Response){
         try{
-            const cursor = db.db("evaluacion_calidad").collection("areas").aggregate([
-                {
-                    $sort: {
-                        "_id": -1
-                    }
-                }
-            ]);
-
-            /**
-             *  convert the cursor to arrat 
-             */
-            let resArray = await cursor.toArray();
-
-            /**
-             * Elimino el primer elemento del array
-             */
-            resArray.splice(0,1);
+            const resAreas = await AreaDAO.getAreas();
             
-            /**
-             * Give a response
-             */
+            const { error } = resAreas;
+
+            if(error){
+                res.status(400).json(error);
+            }
+
             res.json({
-                data: resArray
+                data: resAreas
             });
 
-        }catch(error){
-            console.log(error);
-            res.status(400).json({
-                "message": "Ocurrió algo inesperado"
-            })
+        }catch(e){
+            console.log(e);
+            res.status(400).json(e);
         }  
     }
     
 
-    async getArea(req: Request, res: Response){
+    static async getArea(req: Request, res: Response){
         try {
             
             const { id } = req.params; 
-
-            const cursor = db.db("evaluacion_calidad").collection("areas").aggregate([
-                {
-                    $match: {
-                        "_id": id
-                    }
-                }
-            ]);
-
-            const resArray = cursor.toArray();
+            
+            const resArea = await AreaDAO.getArea(+id);            
+            
+            const { error } = resArea;
+            if(error){
+                res.status(400).json(error);
+            }
             
             res.status(200).json({
-                data: resArray
+                data: resArea
             })
 
-        } catch (error) {
-            console.error(error);
-            response.status(400).json({
-                message: "Ocurrió algo inesperado"
-            });
+        } catch (e) {
+            console.error(e);
+            response.status(400).json(e);
         }
     }
 }
-
-const area = new AreaController();
-export default area;

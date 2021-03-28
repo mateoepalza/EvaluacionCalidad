@@ -1,6 +1,5 @@
 import employeeController from '../controllers/employee.controller';
 import { Router } from 'express';
-import db from '../util/database';
 
 
 class Employee{

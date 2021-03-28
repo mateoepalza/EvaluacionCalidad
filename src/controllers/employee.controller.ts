@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { Employee } from '../models/employee';
 import EmployeeDAO from '../DAO/employee.DAO';
-import employee from '../routes/employee';
 
 class EmployeeController {
 
@@ -66,7 +65,7 @@ class EmployeeController {
             const employee: Employee = {
                 _id: _id,
                 nombre: nombre,
-                id_area: area,
+                id_area: area._id,
                 cargo: cargo,
                 proceso: proceso,
                 email: email,
